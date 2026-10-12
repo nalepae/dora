@@ -787,6 +787,15 @@ func (block *Block) GetDbBuilderExits(indexer *Indexer, isCanonical bool) []*dbt
 	return indexer.dbWriter.buildDbBuilderExits(block, !isCanonical, nil)
 }
 
+// GetDbSweepThresholdRequests returns the database representation of the EIP-8148 set sweep threshold requests in this block.
+func (block *Block) GetDbSweepThresholdRequests(indexer *Indexer, isCanonical bool) []*dbtypes.SweepThresholdRequest {
+	if block.isDisposed {
+		return nil
+	}
+
+	return indexer.dbWriter.buildDbSweepThresholdRequests(block, !isCanonical, nil)
+}
+
 // GetForkId returns the fork ID of this block.
 func (block *Block) GetForkId() ForkKey {
 	return block.forkId

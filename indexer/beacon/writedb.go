@@ -183,6 +183,12 @@ func (dbw *dbWriter) persistBlockChildObjects(tx *sqlx.Tx, block *Block, deposit
 		return err
 	}
 
+	// insert set sweep threshold requests (EIP-8148)
+	err = dbw.persistBlockSweepThresholdRequests(tx, block, orphaned, overrideForkId)
+	if err != nil {
+		return err
+	}
+
 	// insert withdrawals
 	err = dbw.persistBlockWithdrawals(tx, block, orphaned, overrideForkId, sim)
 	if err != nil {
@@ -1186,6 +1192,53 @@ func (dbw *dbWriter) buildDbBuilderExits(block *Block, orphaned bool, overrideFo
 	}
 
 	return dbExits
+}
+
+// persistBlockSweepThresholdRequests writes the EIP-8148 set sweep threshold requests processed by
+// this block to the sweep_threshold_requests table.
+func (dbw *dbWriter) persistBlockSweepThresholdRequests(tx *sqlx.Tx, block *Block, orphaned bool, overrideForkId *ForkKey) error {
+	dbRequests := dbw.buildDbSweepThresholdRequests(block, orphaned, overrideForkId)
+	if len(dbRequests) > 0 {
+		err := db.InsertSweepThresholdRequests(dbw.indexer.ctx, tx, dbRequests)
+		if err != nil {
+			return fmt.Errorf("error inserting sweep threshold requests: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (dbw *dbWriter) buildDbSweepThresholdRequests(block *Block, orphaned bool, overrideForkId *ForkKey) []*dbtypes.SweepThresholdRequest {
+	requests, blockNumber := dbw.getProcessedExecutionRequests(block)
+	if requests == nil || len(requests.SweepThresholds) == 0 {
+		return []*dbtypes.SweepThresholdRequest{}
+	}
+
+	dbRequests := make([]*dbtypes.SweepThresholdRequest, len(requests.SweepThresholds))
+	for idx, request := range requests.SweepThresholds {
+		dbRequest := &dbtypes.SweepThresholdRequest{
+			SlotNumber:      uint64(block.Slot),
+			SlotRoot:        block.Root[:],
+			SlotIndex:       uint64(idx),
+			Orphaned:        orphaned,
+			ForkId:          uint64(block.forkId),
+			SourceAddress:   request.SourceAddress[:],
+			ValidatorPubkey: request.ValidatorPubkey[:],
+			Threshold:       db.ConvertUint64ToInt64(uint64(request.Threshold)),
+			BlockNumber:     blockNumber,
+		}
+		if overrideForkId != nil {
+			dbRequest.ForkId = uint64(*overrideForkId)
+		}
+		if validatorIdx, found := dbw.indexer.pubkeyCache.Get(request.ValidatorPubkey); found {
+			validatorIdx := uint64(validatorIdx)
+			dbRequest.ValidatorIndex = &validatorIdx
+		}
+
+		dbRequests[idx] = dbRequest
+	}
+
+	return dbRequests
 }
 
 func (dbw *dbWriter) persistBlockVoluntaryExits(tx *sqlx.Tx, block *Block, orphaned bool, overrideForkId *ForkKey) error {

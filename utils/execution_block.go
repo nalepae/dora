@@ -224,6 +224,7 @@ func ExecutionRequestsList(requests *all.ExecutionRequests) [][]byte {
 	add(0x02, len(requests.Consolidations), func(i int) sszItem { return requests.Consolidations[i] })
 	add(0x03, len(requests.BuilderDeposits), func(i int) sszItem { return requests.BuilderDeposits[i] })
 	add(0x04, len(requests.BuilderExits), func(i int) sszItem { return requests.BuilderExits[i] })
+	add(0x05, len(requests.SweepThresholds), func(i int) sszItem { return requests.SweepThresholds[i] }) // EIP-8148
 	return list
 }
 

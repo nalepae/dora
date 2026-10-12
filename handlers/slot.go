@@ -58,6 +58,7 @@ func Slot(w http.ResponseWriter, r *http.Request) {
 		"slot/consolidation_requests.html",
 		"slot/builder_deposit_requests.html",
 		"slot/builder_exit_requests.html",
+		"slot/sweep_threshold_requests.html",
 		"slot/bids.html",
 		"slot/arrival.html",
 		"slot/ptc_votes.html",
@@ -412,6 +413,9 @@ func buildSlotPageData(ctx context.Context, blockSlot int64, blockRoot []byte) (
 		}
 		for _, req := range block.BuilderExitRequests {
 			ensAddrs = append(ensAddrs, req.SourceAddress)
+		}
+		for _, req := range block.SweepThresholdRequests {
+			ensAddrs = append(ensAddrs, req.Address)
 		}
 		pageData.SetEnsNames(resolveEnsNames(ctx, ensAddrs))
 	}
@@ -1064,6 +1068,7 @@ func getSlotPageBlockData(ctx context.Context, blockData *services.CombinedBlock
 			getSlotPageConsolidationRequests(pageData, requests.Consolidations, blockData.Header.Message.Slot)
 			getSlotPageBuilderDeposits(ctx, pageData, requests.BuilderDeposits)
 			getSlotPageBuilderExits(ctx, pageData, requests.BuilderExits)
+			getSlotPageSweepThresholdRequests(pageData, requests.SweepThresholds, blockData.Header.Message.Slot)
 		}
 	}
 
@@ -1379,6 +1384,30 @@ func getSlotPageWithdrawalRequests(pageData *models.SlotPageBlockData, withdrawa
 	}
 
 	pageData.WithdrawalRequestsCount = uint64(len(pageData.WithdrawalRequests))
+}
+
+// getSlotPageSweepThresholdRequests fills the EIP-8148 set sweep threshold requests processed by this block.
+func getSlotPageSweepThresholdRequests(pageData *models.SlotPageBlockData, sweepThresholdRequests []*gloas.SetSweepThresholdRequest, slot phase0.Slot) {
+	pageData.SweepThresholdRequests = make([]*models.SlotPageSweepThresholdRequest, 0, len(sweepThresholdRequests))
+
+	for _, sweepThresholdRequest := range sweepThresholdRequests {
+		requestData := &models.SlotPageSweepThresholdRequest{
+			Address:   sweepThresholdRequest.SourceAddress[:],
+			PublicKey: sweepThresholdRequest.ValidatorPubkey[:],
+			Threshold: uint64(sweepThresholdRequest.Threshold),
+		}
+
+		// Only validators have a sweep threshold: a builder pubkey is shown as unknown.
+		if validatorIdx, found := services.GlobalBeaconService.GetValidatorIndexByPubkey(sweepThresholdRequest.ValidatorPubkey); found && uint64(validatorIdx)&services.BuilderIndexFlag == 0 {
+			requestData.Exists = true
+			requestData.ValidatorIndex = uint64(validatorIdx)
+			requestData.ValidatorName = services.GlobalBeaconService.GetValidatorNameAt(uint64(validatorIdx), slot)
+		}
+
+		pageData.SweepThresholdRequests = append(pageData.SweepThresholdRequests, requestData)
+	}
+
+	pageData.SweepThresholdRequestsCount = uint64(len(pageData.SweepThresholdRequests))
 }
 
 func getSlotPageConsolidationRequests(pageData *models.SlotPageBlockData, consolidationRequests []*electra.ConsolidationRequest, slot phase0.Slot) {

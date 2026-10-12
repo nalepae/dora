@@ -260,3 +260,5 @@ require (
 )
 
 tool github.com/pk910/dynamic-ssz/dynssz-gen
+
+replace github.com/ethpandaops/go-eth2-client => github.com/nalepae/go-eth2-client v0.1.7-0.20261012141207-81209f3b8f85

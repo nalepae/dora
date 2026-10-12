@@ -153,6 +153,14 @@ type SlashingFilter struct {
 	WithReason    SlashingReason
 }
 
+type SweepThresholdRequestFilter struct {
+	MinSlot       uint64
+	MaxSlot       uint64
+	PublicKey     []byte
+	SourceAddress []byte
+	WithOrphaned  uint8
+}
+
 type WithdrawalRequestFilter struct {
 	MinSlot       uint64
 	MaxSlot       uint64

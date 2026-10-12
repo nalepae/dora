@@ -35,6 +35,7 @@ func Validator(w http.ResponseWriter, r *http.Request) {
 		"validator/recentDeposits.html",
 		"validator/withdrawalRequests.html",
 		"validator/consolidationRequests.html",
+		"validator/sweepThresholdRequests.html",
 		"validator/withdrawals.html",
 		"_shared/txDetailsModal.html",
 		"_svg/timeline.html",
@@ -149,6 +150,14 @@ func buildValidatorPageData(ctx context.Context, validatorIndex uint64, tabView 
 	// of a misleading 0.
 	recentBalances := services.GlobalBeaconService.GetBeaconIndexer().GetRecentValidatorBalances(nil)
 	pageData.BalanceResolved = recentBalances != nil && uint64(validator.Index) < uint64(len(recentBalances))
+	pageData.GloasIsActive = specs.GloasForkEpoch != nil && uint64(chainState.CurrentEpoch()) >= *specs.GloasForkEpoch
+
+	// EIP-8148 sweep threshold, from the same recent state as the balance (Gloas+ only).
+	recentSweepThresholds := services.GlobalBeaconService.GetBeaconIndexer().GetRecentValidatorSweepThresholds(nil)
+	if uint64(validator.Index) < uint64(len(recentSweepThresholds)) {
+		pageData.SweepThreshold = uint64(recentSweepThresholds[validator.Index])
+		pageData.SweepThresholdResolved = true
+	}
 
 	// Check for queued deposits
 	filteredQueue := services.GlobalBeaconService.GetFilteredQueuedDeposits(ctx, &services.QueuedDepositFilter{
@@ -611,6 +620,31 @@ func buildValidatorPageData(ctx context.Context, validatorIndex uint64, tabView 
 		}
 
 		pageData.WithdrawalRequestCount = uint64(len(pageData.WithdrawalRequests))
+	}
+
+	// load recent EIP-8148 set sweep threshold requests
+	if pageData.TabView == "sweepthresholdrequests" {
+		requests, totalRequests := services.GlobalBeaconService.GetSweepThresholdRequestsByFilter(ctx, &dbtypes.SweepThresholdRequestFilter{
+			PublicKey:    validator.Validator.PublicKey[:],
+			WithOrphaned: 1,
+		}, 0, 10)
+		if totalRequests > 10 {
+			pageData.AdditionalSweepThresholdRequestCount = totalRequests - 10
+		}
+
+		pageData.SweepThresholdRequests = make([]*models.ValidatorPageDataSweepThresholdRequest, 0, len(requests))
+		for _, request := range requests {
+			pageData.SweepThresholdRequests = append(pageData.SweepThresholdRequests, &models.ValidatorPageDataSweepThresholdRequest{
+				SlotNumber: request.SlotNumber,
+				SlotRoot:   request.SlotRoot,
+				Time:       chainState.SlotToTime(phase0.Slot(request.SlotNumber)),
+				Orphaned:   request.Orphaned,
+				SourceAddr: request.SourceAddress,
+				Threshold:  db.ConvertInt64ToUint64(request.Threshold),
+			})
+		}
+
+		pageData.SweepThresholdRequestCount = uint64(len(pageData.SweepThresholdRequests))
 	}
 
 	// load recent consolidation requests
