@@ -441,6 +441,28 @@ func (indexer *Indexer) GetValidatorInclusionDistances(lookbackEpochs phase0.Epo
 
 // GetRecentValidatorBalances returns the most recent validator balances for the given fork.
 func (indexer *Indexer) GetRecentValidatorBalances(overrideForkId *ForkKey) []phase0.Gwei {
+	dependentState := indexer.getRecentDependentState(overrideForkId)
+	if dependentState == nil {
+		return nil
+	}
+
+	return dependentState.validatorBalances
+}
+
+// GetRecentValidatorSweepThresholds returns the most recent EIP-8148 validator sweep thresholds
+// for the given fork, indexed by validator index. It returns nil before Gloas, or when no recent
+// state is loaded.
+func (indexer *Indexer) GetRecentValidatorSweepThresholds(overrideForkId *ForkKey) []phase0.Gwei {
+	dependentState := indexer.getRecentDependentState(overrideForkId)
+	if dependentState == nil {
+		return nil
+	}
+
+	return dependentState.validatorSweepThresholds
+}
+
+// getRecentDependentState returns the most recent loaded dependent state for the given fork.
+func (indexer *Indexer) getRecentDependentState(overrideForkId *ForkKey) *epochState {
 	chainState := indexer.consensusPool.GetChainState()
 
 	canonicalHead := indexer.GetCanonicalHead(overrideForkId)
@@ -476,7 +498,7 @@ func (indexer *Indexer) GetRecentValidatorBalances(overrideForkId *ForkKey) []ph
 		return nil
 	}
 
-	return epochStats.dependentState.validatorBalances
+	return epochStats.dependentState
 }
 
 // GetFullValidatorByIndex returns the full validator set entry for a given validator index, including balances and validator status.

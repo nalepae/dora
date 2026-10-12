@@ -144,9 +144,14 @@ func isFullyWithdrawableValidator(v *phase0.Validator, balance phase0.Gwei, epoc
 }
 
 // isPartiallyWithdrawableValidator checks if a validator is partially withdrawable (sweep).
+// sweepThreshold is get_effective_sweep_threshold, which is get_max_effective_balance before Gloas.
 // https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#modified-is_partially_withdrawable_validator
-func isPartiallyWithdrawableValidator(v *phase0.Validator, balance phase0.Gwei, maxEB phase0.Gwei) bool {
-	return hasExecutionWithdrawalCredential(v) && v.EffectiveBalance == maxEB && balance > maxEB
+// Modified in EIP-8148: https://github.com/ethereum/consensus-specs/blob/master/specs/_features/eip8148/beacon-chain.md#modified-is_partially_withdrawable_validator
+func isPartiallyWithdrawableValidator(v *phase0.Validator, balance phase0.Gwei, sweepThreshold phase0.Gwei, version spec.DataVersion) bool {
+	if version >= spec.DataVersionGloas {
+		return hasExecutionWithdrawalCredential(v) && v.EffectiveBalance >= sweepThreshold && balance > sweepThreshold
+	}
+	return hasExecutionWithdrawalCredential(v) && v.EffectiveBalance == sweepThreshold && balance > sweepThreshold
 }
 
 // isEligibleForPartialWithdrawals checks if a validator can process a pending partial withdrawal.
@@ -280,15 +285,15 @@ func getExpectedWithdrawals(s *stateAccessor) *expectedWithdrawals {
 				continue
 			}
 
-			// Partial (sweep) withdrawal: excess balance above max effective balance,
-			// only when effective_balance has reached the max.
-			maxEB := s.getMaxEffectiveBalance(validator)
-			if isPartiallyWithdrawableValidator(validator, balance, maxEB) {
+			// Partial (sweep) withdrawal: excess balance above the sweep threshold (the max
+			// effective balance before Gloas), only when effective_balance has reached it.
+			sweepThreshold := s.getEffectiveSweepThreshold(vidx)
+			if isPartiallyWithdrawableValidator(validator, balance, sweepThreshold, s.Version) {
 				result.withdrawals = append(result.withdrawals, &capella.Withdrawal{
 					Index:          nextIdx,
 					ValidatorIndex: vidx,
 					Address:        getWithdrawalAddress(validator),
-					Amount:         balance - maxEB,
+					Amount:         balance - sweepThreshold,
 				})
 				nextIdx++
 			}

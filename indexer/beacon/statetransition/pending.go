@@ -157,6 +157,11 @@ func addValidatorToRegistry(s *stateAccessor, pubkey phase0.BLSPubKey, withdrawa
 	s.PreviousEpochParticipation = append(s.PreviousEpochParticipation, 0)
 	s.CurrentEpochParticipation = append(s.CurrentEpochParticipation, 0)
 	s.InactivityScores = append(s.InactivityScores, 0)
+
+	// [New in EIP-8148]
+	if s.Version >= spec.DataVersionGloas {
+		s.ValidatorSweepThresholds = append(s.ValidatorSweepThresholds, s.getInitialSweepThreshold(withdrawalCredentials))
+	}
 }
 
 // getValidatorFromDeposit implements the Electra modified get_validator_from_deposit.

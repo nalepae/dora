@@ -1,0 +1,62 @@
+{{ define "sweepThresholdRequests" }}
+  <div class="card">
+    <div class="card-body px-0 py-0">
+      <div class="table-responsive px-0 py-0">
+        <table class="table table-nobr" id="sweepThresholdRequests">
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Time</th>
+              <th><span class="d-none d-lg-inline">Source </span>Address</th>
+              <th>Sweep Threshold</th>
+              <th><span class="d-none d-lg-inline">Incl. </span>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ if gt .SweepThresholdRequestCount 0 }}
+              {{ range $i, $request := .SweepThresholdRequests }}
+                <tr>
+                  {{ if $request.Orphaned }}
+                    <td><a href="/slot/0x{{ printf "%x" $request.SlotRoot }}">{{ formatAddCommas $request.SlotNumber }}</a></td>
+                  {{ else }}
+                    <td><a href="/slot/{{ $request.SlotNumber }}">{{ formatAddCommas $request.SlotNumber }}</a></td>
+                  {{- end }}
+                  <td data-timer="{{ $request.Time.Unix }}"><span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ $request.Time }}">{{ formatRecentTimeShort $request.Time }}</span></td>
+                  <td>
+                    <div class="d-flex">
+                      <span class="flex-grow-1 text-truncate" style="width: 150px;">{{ ethAddressLink $request.SourceAddr }}</span>
+                      <div>
+                        <i class="fa fa-copy text-muted ml-2 p-1" role="button" data-bs-toggle="tooltip" title="Copy to clipboard" data-clipboard-text="{{ formatEthAddress $request.SourceAddr }}"></i>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ formatEthFromGwei $request.Threshold }}</td>
+                  <td>
+                    {{ if $request.Orphaned }}
+                      <span class="badge rounded-pill text-bg-info">Req. Orphaned</span>
+                    {{ else }}
+                      <span class="badge rounded-pill text-bg-success" data-bs-toggle="tooltip" title="Request was processed by the beacon chain. The beacon chain ignores it if the source address is not the validator's withdrawal address, the validator does not have 0x02 credentials, or the threshold is out of range.">Req. Included</span>
+                    {{ end }}
+                  </td>
+                </tr>
+              {{ end }}
+              {{ if gt .AdditionalSweepThresholdRequestCount 0 }}
+              <tr>
+                <td colspan="5" class="text-center text-muted">{{ .AdditionalSweepThresholdRequestCount }} older sweep threshold requests not shown</td>
+              </tr>
+              {{ end }}
+            {{ else }}
+              <tr style="height: 430px;">
+                <td style="vertical-align: middle;" colspan="5">
+                  <div class="img-fluid mx-auto p-3 d-flex align-items-center" style="max-height: 400px; max-width: 400px; overflow: hidden;">
+                    {{ template "timeline_svg" }}
+                  </div>
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{{ end }}

@@ -435,6 +435,20 @@ const (
 	WithdrawalRequestResultValidatorBalanceTooLow        uint8 = 27
 )
 
+// SweepThresholdRequest is an EIP-8148 set sweep threshold request, as processed by the beacon chain.
+type SweepThresholdRequest struct {
+	SlotNumber      uint64  `db:"slot_number"`
+	SlotRoot        []byte  `db:"slot_root"`
+	SlotIndex       uint64  `db:"slot_index"`
+	Orphaned        bool    `db:"orphaned"`
+	ForkId          uint64  `db:"fork_id"`
+	SourceAddress   []byte  `db:"source_address"`
+	ValidatorIndex  *uint64 `db:"validator_index"`
+	ValidatorPubkey []byte  `db:"validator_pubkey"`
+	Threshold       int64   `db:"threshold"`
+	BlockNumber     uint64  `db:"block_number"`
+}
+
 type WithdrawalRequest struct {
 	SlotNumber      uint64  `db:"slot_number"`
 	SlotRoot        []byte  `db:"slot_root"`

@@ -78,6 +78,16 @@ type ValidatorPageData struct {
 	WithdrawalCount                     uint64                               `json:"withdrawal_count"`
 	AdditionalWithdrawalCount           uint64                               `json:"additional_withdrawal_count"`
 
+	// EIP-8148 sweep threshold, only set when SweepThresholdResolved.
+	SweepThreshold         uint64 `json:"sweep_threshold"`
+	SweepThresholdResolved bool   `json:"sweep_threshold_resolved"`
+
+	// EIP-8148 set sweep threshold requests tab (Gloas+).
+	GloasIsActive                        bool                                      `json:"gloas_is_active"`
+	SweepThresholdRequests               []*ValidatorPageDataSweepThresholdRequest `json:"sweep_threshold_requests"`
+	SweepThresholdRequestCount           uint64                                    `json:"sweep_threshold_request_count"`
+	AdditionalSweepThresholdRequestCount uint64                                    `json:"additional_sweep_threshold_request_count"`
+
 	EnsNameData
 }
 
@@ -172,6 +182,16 @@ type ValidatorPageDataConsolidationTxDetails struct {
 	TxOrigin    string `json:"tx_origin"`
 	TxTarget    string `json:"tx_target"`
 	TxHash      string `json:"tx_hash"`
+}
+
+// ValidatorPageDataSweepThresholdRequest is an EIP-8148 set sweep threshold request processed by the beacon chain.
+type ValidatorPageDataSweepThresholdRequest struct {
+	SlotNumber uint64    `json:"slot"`
+	SlotRoot   []byte    `json:"slot_root" ssz-size:"32"`
+	Time       time.Time `json:"time"`
+	Orphaned   bool      `json:"orphaned"`
+	SourceAddr []byte    `json:"source_addr" ssz-size:"20"`
+	Threshold  uint64    `json:"threshold"`
 }
 
 type ValidatorPageDataWithdrawal struct {

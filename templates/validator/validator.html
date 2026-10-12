@@ -146,6 +146,18 @@
             {{ formatEthAddCommasFromGwei .EffectiveBalance }} ETH
           </div>
         </div>
+        {{ if .SweepThresholdResolved }}
+        <div class="row border-bottom p-2 mx-0">
+          <div class="col-md-2"><span data-bs-toggle="tooltip" data-bs-placement="top" title="EIP-8148: balance above which the excess is swept to the withdrawal address">Sweep Threshold:</span></div>
+          <div class="col-md-10">
+            {{ if gt .SweepThreshold 0 }}
+            {{ formatEthAddCommasFromGwei .SweepThreshold }} ETH
+            {{ else }}
+            <span data-bs-toggle="tooltip" title="Only validators with compounding (0x02) withdrawal credentials have a sweep threshold.">-</span>
+            {{ end }}
+          </div>
+        </div>
+        {{ end }}
         {{ if or .IsActive .WasActive }}
         <div class="row border-bottom p-2 mx-0">
           <div class="col-md-2"><span data-bs-toggle="tooltip" data-bs-placement="top" title="Average attestation inclusion distance based on cached blocks">Avg. Inclusion Distance:</span></div>
@@ -245,6 +257,13 @@
         </a>
       </li>
       {{ end }}
+      {{ if .GloasIsActive }}
+      <li class="nav-item">
+        <a class="nav-link{{ if eq .TabView "sweepthresholdrequests" }} active{{ end }}" id="recentSweepThresholdRequests-tab" data-lazy-tab="recentSweepThresholdRequests" data-bs-toggle="tab" data-bs-target="#recentSweepThresholdRequests" href="?v=sweepthresholdrequests" role="tab" aria-controls="recentSweepThresholdRequests" aria-selected="{{ if eq .TabView "sweepthresholdrequests" }}true{{ else }}false{{ end }}">
+          <i class="fa fa-sliders me-2"></i> Sweep Threshold Requests
+        </a>
+      </li>
+      {{ end }}
     </ul>
 
     <div class="tab-content" id="tabContent">
@@ -280,6 +299,13 @@
         {{ end }}
       </div>
       {{ end }}
+      {{ if .GloasIsActive }}
+      <div class="tab-pane fade{{ if eq .TabView "sweepthresholdrequests" }} show active{{ end }}" id="recentSweepThresholdRequests" role="tabpanel" aria-labelledby="recentSweepThresholdRequests-tab" data-loaded="{{ if eq .TabView "sweepthresholdrequests" }}true{{ else }}false{{ end }}">
+        {{ if eq .TabView "sweepthresholdrequests" }}
+          {{ template "sweepThresholdRequests" . }}
+        {{ end }}
+      </div>
+      {{ end }}
     </div>
 
     {{ template "txDetailsModal" . }}
@@ -299,6 +325,8 @@
     {{ template "withdrawalRequests" . }}
   {{ else if eq .TabView "consolidationrequests" }}
     {{ template "consolidationRequests" . }}
+  {{ else if eq .TabView "sweepthresholdrequests" }}
+    {{ template "sweepThresholdRequests" . }}
   {{ else }}
     Unknown tab
   {{ end }}

@@ -32,6 +32,7 @@ type epochState struct {
 	stateSlot                 phase0.Slot
 	sourceBlockUid            uint64 // block UID of the source block (before epoch transition)
 	validatorBalances         []phase0.Gwei
+	validatorSweepThresholds  []phase0.Gwei // EIP-8148, indexed like the on-chain validator registry
 	builderBalances           []phase0.Gwei
 	randaoMixes               []phase0.Root
 	depositIndex              uint64
@@ -287,6 +288,9 @@ func (s *epochState) processState(state *all.BeaconState, cache *epochCache) err
 			builderBalances[i] = builder.Balance
 		}
 		s.builderBalances = builderBalances
+
+		// EIP-8148: per-validator sweep thresholds, only for the on-chain registry.
+		s.validatorSweepThresholds = state.ValidatorSweepThresholds
 	}
 
 	validatorPubkeyMap := make(map[phase0.BLSPubKey]phase0.ValidatorIndex, len(state.Validators))

@@ -89,6 +89,7 @@ type SlotPageBlockData struct {
 	ConsolidationRequestsCount  uint64                  `json:"consolidation_requests_count"`
 	BuilderDepositRequestsCount uint64                  `json:"builder_deposit_requests_count"`
 	BuilderExitRequestsCount    uint64                  `json:"builder_exit_requests_count"`
+	SweepThresholdRequestsCount uint64                  `json:"sweep_threshold_requests_count"`
 	RequestsFromParentPayload   bool                    `json:"requests_from_parent_payload"`
 	BidsCount                   uint64                  `json:"bids_count"`
 	PtcVotesCount               uint64                  `json:"ptc_votes_count"`
@@ -117,6 +118,7 @@ type SlotPageBlockData struct {
 	ConsolidationRequests     []*SlotPageConsolidationRequest  `json:"consolidation_requests"`      // ConsolidationRequests included in this block
 	BuilderDepositRequests    []*SlotPageBuilderDepositRequest `json:"builder_deposit_requests"`    // Builder deposit requests processed by this block (Gloas)
 	BuilderExitRequests       []*SlotPageBuilderExitRequest    `json:"builder_exit_requests"`       // Builder exit requests processed by this block (Gloas)
+	SweepThresholdRequests    []*SlotPageSweepThresholdRequest `json:"sweep_threshold_requests"`    // Set sweep threshold requests processed by this block (EIP-8148)
 	Bids                      []*SlotPageBid                   `json:"bids"`                        // Execution payload bids for this block (ePBS)
 	HasGossipBids             bool                             `json:"has_gossip_bids"`             // At least one bid came from an external builder (self-built bids are not gossiped)
 	PtcVotes                  *SlotPagePtcVotes                `json:"ptc_votes"`                   // PTC votes included in this block (for previous slot)
@@ -398,6 +400,15 @@ type SlotPageWithdrawalRequest struct {
 	ValidatorName  string `db:"valname"`
 	IsBuilder      bool   `db:"is_builder"`
 	Amount         uint64 `db:"amount"`
+}
+
+type SlotPageSweepThresholdRequest struct {
+	Address        []byte `db:"address" ssz-size:"20"`
+	PublicKey      []byte `db:"pubkey" ssz-size:"48"`
+	Exists         bool   `db:"exists"`
+	ValidatorIndex uint64 `db:"valindex"`
+	ValidatorName  string `db:"valname"`
+	Threshold      uint64 `db:"threshold"`
 }
 
 type SlotPageConsolidationRequest struct {

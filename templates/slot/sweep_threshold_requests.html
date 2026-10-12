@@ -1,0 +1,34 @@
+{{ define "block_sweep_threshold_requests" }}
+  <div class="table-ellipsis">
+    <table id="block_sweep_thresholds" class="table table-sm text-left">
+      <thead>
+        <tr>
+          <th class="border-0">Sender Address</th>
+          <th class="border-0">Validator PubKey</th>
+          <th class="border-0">Validator Index</th>
+          <th class="border-0">Sweep Threshold</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range $i, $sweepthresholdreq := .Block.SweepThresholdRequests }}
+          <tr>
+            <td>{{ ethAddressLink $sweepthresholdreq.Address }}</td>
+            <td class="text-monospace">
+              <i class="fas fa-male mr-2"></i>
+              0x{{ printf "%x" $sweepthresholdreq.PublicKey }}
+              <i class="fa fa-copy text-muted ml-2 p-1" role="button" data-bs-toggle="tooltip" title="Copy to clipboard" data-clipboard-text="0x{{ printf "%x" $sweepthresholdreq.PublicKey }}"></i>
+            </td>
+            <td>
+              {{- if $sweepthresholdreq.Exists }}
+                {{ formatValidatorWithIndex $sweepthresholdreq.ValidatorIndex $sweepthresholdreq.ValidatorName }}
+              {{- else }}
+                ?
+              {{- end }}
+            </td>
+            <td>{{ formatEthFromGwei $sweepthresholdreq.Threshold }}</td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+{{ end }}

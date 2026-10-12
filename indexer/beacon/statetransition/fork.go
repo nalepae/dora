@@ -119,6 +119,9 @@ func upgradeToGloas(s *stateAccessor) []*electra.PendingDeposit {
 	s.LatestExecutionPayloadBid = bid
 	s.PayloadExpectedWithdrawals = make([]*capella.Withdrawal, 0)
 
+	// [New in EIP-8148] per-validator sweep thresholds.
+	initializeSweepThresholds(s)
+
 	// [New in Gloas:EIP7732] PTC assignment window.
 	s.PTCWindow = initializePtcWindow(s)
 

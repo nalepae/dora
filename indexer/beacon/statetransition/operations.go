@@ -90,6 +90,10 @@ func applyExecutionRequests(s *stateAccessor, requests *all.ExecutionRequests) {
 		for _, builderExit := range requests.BuilderExits {
 			processBuilderExitRequest(s, builderExit)
 		}
+		// [New in EIP-8148]
+		for _, sweepThreshold := range requests.SweepThresholds {
+			processSetSweepThresholdRequest(s, sweepThreshold)
+		}
 	}
 }
 
@@ -667,6 +671,11 @@ func switchToCompoundingValidator(s *stateAccessor, index phase0.ValidatorIndex)
 	validator := s.Validators[index]
 	validator.WithdrawalCredentials[0] = 0x02
 	queueExcessActiveBalance(s, index)
+
+	// [New in EIP-8148]
+	if s.Version >= spec.DataVersionGloas && uint64(index) < uint64(len(s.ValidatorSweepThresholds)) {
+		s.ValidatorSweepThresholds[index] = phase0.Gwei(s.specs.MaxEffectiveBalanceElectra)
+	}
 }
 
 // queueExcessActiveBalance moves any balance above MIN_ACTIVATION_BALANCE from
